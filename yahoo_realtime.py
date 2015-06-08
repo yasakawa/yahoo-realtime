@@ -7,40 +7,62 @@ import urllib2
 import logging
 from bs4 import BeautifulSoup
 
-def search(keyword):
+def search(keyword, useragent=None):
+    """ Yahooリアルタイムからkeywordで検索する
+    
+    return sample
+    [
+     {'data_time': u'143305000',
+      'screen_name': u'username',
+      'text': u'ツイート本文',
+      'tweet_id_str': u'123456789012345678'},
+      ...
+    ]
+    """
     keyword_enc = urllib.quote(keyword)
-    url_string = "http://realtime.search.yahoo.co.jp/search?p=%s&ei=UTF-8" % (keyword)
-        
-    useragent = "Mozilla/5.0 (Windows NT 6.3; WOW64; Trident/7.0; Touch; rv:11.0) like Gecko"
-    logging.info("URL: %s" % url_string)
+    url_string = "http://realtime.search.yahoo.co.jp/search?p=%s&ei=UTF-8" % (keyword)    
     try:
         req = urllib2.Request(url_string)
-        req.add_header("User-agent", useragent)
+        if useragent:
+            req.add_header("User-agent", useragent)
         response = urllib2.urlopen(req)
-        #response = urllib2.urlopen(url_string)
-        logging.info("Finish downloading html.")
-        retstr = response.read()
+        html = response.read()
     except Exception, e:
         logging.error('type:' + str(type(e)))
         logging.error('args:' + str(e.args))
         logging.error('message:' + e.message)
-        logging.error(str(e))
         return
     
-    #print retstr
-    return retstr
+    return parse_html(html)
 
 
-if __name__ == '__main__':
-    argvs = sys.argv  # コマンドライン引数を格納したリストの取得
-    argc = len(argvs) # 引数の個数
+def pagenation(keyword, uts, useragent=None):
+    """ Yahooリアルタイムからkeywordで検索する（ページング処理）
+        uts: 前回の検索結果の """
 
-    reg = re.compile(r"http%3a//twitter.com/([A-Za-z0-9_]+)/status/([0-9]+)")
-
-    html = search('CYBR')
-    soup = BeautifulSoup(html)
+    keyword_enc = urllib.quote(keyword)
+    url_string = "http://realtime.search.yahoo.co.jp/paginationjs?p=%s&uts=%s" % (keyword, uts)
+    try:
+        req = urllib2.Request(url_string)
+        if useragent:
+            req.add_header("User-agent", useragent)
+        response = urllib2.urlopen(req)
+        html = response.read()
+    except Exception, e:
+        logging.error('type:' + str(type(e)))
+        logging.error('args:' + str(e.args))
+        logging.error('message:' + e.message)
+        return
     
+    return parse_html(html)
+    
+
+def parse_html(html):
+    """ Yahooリアルタイムから返されたHTMLを解析する """
+
     tweets = []
+    reg = re.compile(r"http%3a//twitter.com/([A-Za-z0-9_]+)/status/([0-9]+)")
+    soup = BeautifulSoup(html)
     
     cnf_soups = soup.find_all('div', class_="cnt" )
     for cnf_soup in cnf_soups:
@@ -58,6 +80,26 @@ if __name__ == '__main__':
             tweet['screen_name'] = match.group(1)
             tweet['tweet_id_str'] = match.group(2)
             tweets.append(tweet)
-        
+    
+    return tweets
+
+
+if __name__ == '__main__':
+    argvs = sys.argv  # コマンドライン引数を格納したリストの取得
+    argc = len(argvs) # 引数の個数
+
+    keyword = 'CYBR'
+    useragent = 'Mozilla/5.0 (Windows NT 6.3; WOW64; Trident/7.0; Touch; rv:11.0) like Gecko'
+
+    tweets = search('CYBR', useragent)
+    
     import pprint
     pprint.pprint(tweets)
+    print("====================================================================")
+
+    if len(tweets) == 10:
+        last_uts = tweets[9]['data_time']
+        tweets = pagenation(keyword, last_uts)
+
+        import pprint
+        pprint.pprint(tweets)
