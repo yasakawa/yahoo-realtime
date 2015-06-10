@@ -15,7 +15,8 @@ def search(keyword, useragent=None):
      {'data_time': u'143305000',
       'screen_name': u'username',
       'text': u'ツイート本文',
-      'tweet_id_str': u'123456789012345678'},
+      'tweet_id_str': u'123456789012345678',
+      'ref':'Twitter'}, # Twitter or Facebook
       ...
     ]
     """
@@ -38,7 +39,7 @@ def search(keyword, useragent=None):
 
 def pagenation(keyword, uts, useragent=None):
     """ Yahooリアルタイムからkeywordで検索する（ページング処理）
-        uts: 前回の検索結果の """
+        uts: 前回の検索結果のUNIXタイム。これより古いツイートが返される """
 
     keyword_enc = urllib.quote(keyword)
     url_string = "http://realtime.search.yahoo.co.jp/paginationjs?p=%s&uts=%s" % (keyword, uts)
@@ -71,11 +72,14 @@ def parse_html(html):
 
         h2_soup = cnf_soup.find('h2')
         tweet['text'] = h2_soup.get_text(strip=True)
+
+        ref_soup = cnf_soup.find('span', class_='ref')
+        tweet['ref'] = ref_soup.get_text(strip=True)
         
         inf_soups = cnf_soup.select('a[title]')
         if inf_soups:
             href = inf_soups[0]['href']
-            match = reg.search(href)            
+            match = reg.search(href)
 
             tweet['screen_name'] = match.group(1)
             tweet['tweet_id_str'] = match.group(2)
