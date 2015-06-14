@@ -20,8 +20,8 @@ def search(keyword, useragent=None):
       ...
     ]
     """
-    keyword_enc = urllib.quote(keyword)
-    url_string = "http://realtime.search.yahoo.co.jp/search?p=%s&ei=UTF-8" % (keyword)    
+    keyword_enc = urllib.quote(keyword.encode('utf-8'))
+    url_string = "http://realtime.search.yahoo.co.jp/search?p=%s&ei=UTF-8" % (keyword_enc)    
     try:
         req = urllib2.Request(url_string)
         if useragent:
@@ -80,10 +80,11 @@ def parse_html(html):
         if inf_soups:
             href = inf_soups[0]['href']
             match = reg.search(href)
-
-            tweet['screen_name'] = match.group(1)
-            tweet['tweet_id_str'] = match.group(2)
-            tweets.append(tweet)
+            
+            if match:
+                tweet['screen_name'] = match.group(1)
+                tweet['tweet_id_str'] = match.group(2)
+                tweets.append(tweet)
     
     return tweets
 
@@ -92,18 +93,21 @@ if __name__ == '__main__':
     argvs = sys.argv  # コマンドライン引数を格納したリストの取得
     argc = len(argvs) # 引数の個数
 
-    keyword = 'CYBR'
+    #keyword = u'スプランク'
+    keyword = u'スカイワークス'
     useragent = 'Mozilla/5.0 (Windows NT 6.3; WOW64; Trident/7.0; Touch; rv:11.0) like Gecko'
 
-    tweets = search('CYBR', useragent)
+    tweets = search(keyword, useragent)
     
     import pprint
     pprint.pprint(tweets)
+    
+    """
     print("====================================================================")
-
     if len(tweets) == 10:
         last_uts = tweets[9]['data_time']
         tweets = pagenation(keyword, last_uts)
 
         import pprint
         pprint.pprint(tweets)
+    """
