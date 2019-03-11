@@ -12,9 +12,9 @@ def search(keyword, useragent=None):
     
     return sample
     [
-     {'data_time': u'143305000',
-      'screen_name': u'username',
-      'text': u'ツイート本文',
+     {'data_time': '143305000',
+      'screen_name': 'username',
+      'text': 'ツイート本文',
       'tweet_id_str': u'123456789012345678',
       'ref':'Twitter'}, # Twitter or Facebook
       ...
